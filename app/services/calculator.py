@@ -110,11 +110,13 @@ class AttendanceCalculator:
             att.shift_id = shift.id
 
         # Get device logs for this date
-        att_date_str = att_date.isoformat()
+        punch_start = datetime.combine(att_date, time.min, tzinfo=timezone.utc)
+        punch_end = datetime.combine(att_date + timedelta(days=1), time.min, tzinfo=timezone.utc)
         log_result = await db.execute(
             select(DeviceLog).where(
                 DeviceLog.employee_id == employee_id,
-                func.date(DeviceLog.punch_time) == att_date_str,
+                DeviceLog.punch_time >= punch_start,
+                DeviceLog.punch_time < punch_end,
             ).order_by(DeviceLog.punch_time.asc())
         )
         logs = list(log_result.scalars().all())

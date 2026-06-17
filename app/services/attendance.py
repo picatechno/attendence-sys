@@ -1,5 +1,5 @@
 from typing import Optional
-from datetime import date, datetime, timezone
+from datetime import date, datetime, time, timedelta, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
@@ -29,10 +29,13 @@ class AttendanceService:
     @staticmethod
     async def process_device_logs(db: AsyncSession, employee_id: str, att_date: date) -> Attendance:
         """Basic processing: take first punch as clock-in, last as clock-out."""
+        punch_start = datetime.combine(att_date, time.min, tzinfo=timezone.utc)
+        punch_end = datetime.combine(att_date + timedelta(days=1), time.min, tzinfo=timezone.utc)
         result = await db.execute(
             select(DeviceLog).where(
                 DeviceLog.employee_id == employee_id,
-                func.date(DeviceLog.punch_time) == att_date,
+                DeviceLog.punch_time >= punch_start,
+                DeviceLog.punch_time < punch_end,
             ).order_by(DeviceLog.punch_time.asc())
         )
         logs = list(result.scalars().all())
