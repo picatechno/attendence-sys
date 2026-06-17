@@ -87,7 +87,8 @@ async def receive_data(
                 continue
             await DeviceService.save_device_log(
                 db, device.id, rec["zk_user_id"], punch_time,
-                verify_mode=rec["verify_mode"], raw=str(rec),
+                verify_mode=int(rec["verify_mode"]) if rec.get("verify_mode") else 0,
+                raw=str(rec),
             )
 
     elif table == "BIODATA":

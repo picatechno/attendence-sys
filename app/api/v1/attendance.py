@@ -178,3 +178,17 @@ async def send_device_command(
     db: AsyncSession = Depends(get_db),
 ):
     return {"message": f"Command {command.command} queued for device {device_id}"}
+
+
+@device_router.post("/pull-attendance")
+async def pull_device_attendance(
+    device_ip: str = Query(...),
+    device_port: int = Query(4370),
+    current_user: User = Depends(get_user_with_permissions("device:manage")),
+    db: AsyncSession = Depends(get_db),
+):
+    """Connect to ZKTeco device via SDK (port 4370) and pull attendance logs."""
+    from app.services.zk_sdk import pull_attendance_from_device
+
+    records = await pull_attendance_from_device(db, device_ip, device_port)
+    return {"message": f"Pulled {len(records)} records", "records": records}
